@@ -37,6 +37,11 @@ const ProductBought = Sequelize.define(
       type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
     },
+    fechaCompra: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      defaultValue: Sequelize.NOW,
+    },
   },
   {
     timestamps: true,

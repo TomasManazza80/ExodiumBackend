@@ -1,80 +1,87 @@
+const mercadopago = require('mercadopago');
 const axios = require('axios');
 
-const MERCADO_PAGO_ACCESS_TOKEN = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-const API_URL = process.env.VITE_API_URL;
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 2000; // 2 segundos
+const createPreference = async (createPaymentDto, id) => {
+  const client = {
+    access_token: 'APP_USR-8101026874292077-101721-08438cf8d2ed21fe5947641f4ae99cd8-2015493826',
+  };
 
-const getMonthName = (date) => {
-  const monthNames = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
-  ];
-  return monthNames[date.getMonth()];
-};
+  mercadopago.configure(client);
 
-const fetchPaymentWithRetry = async (paymentId, retries = MAX_RETRIES) => {
+  const preferenceData = {
+    items: [
+      {
+        title: createPaymentDto.title,
+        quantity: Number(createPaymentDto.quantity),
+        unit_price: Number(createPaymentDto.price),
+        currency_id: 'ARS',
+      },
+    ],
+    back_urls: {
+      success: 'https://ecommerceback-haed.onrender.com/confirmacionPago',
+      failure: 'http://localhost:5173/user/allcredits',
+      pending: 'http://localhost:5173/user/allcredits',
+    },
+    auto_return: 'approved',
+    external_reference: id,
+  };
+
   try {
-    const response = await axios.get(
-      `https://api.mercadopago.com/v1/payments/${paymentId}`, {
-        headers: {
-          Authorization: `Bearer ${MERCADO_PAGO_ACCESS_TOKEN}`,
-        },
-      }
-    );
-    return response.data;
+    const preference = await mercadopago.preferences.create(preferenceData);
+    return preference.body;
   } catch (error) {
-    if (error.response?.status === 404 && retries > 0) {
-      console.log(`Payment ${paymentId} not found, retrying (${MAX_RETRIES - retries + 1}/${MAX_RETRIES})...`);
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY));
-      return fetchPaymentWithRetry(paymentId, retries - 1);
-    }
     throw error;
   }
 };
 
-const processWebhookData = async (webhookData, queryParams) => {
-  const paymentId = webhookData.data?.id || queryParams['data.id'];
-  if (!paymentId) {
-    console.log("---------------------------------");
-    console.error("❌ No se encontró ID de pago en el webhook.");
-    console.log("---------------------------------");
-    return;
+const processWebhookData = async (webhookData) => {
+  if (webhookData.data.product) {
+    const productId = webhookData.data.product.id;
+    const quantity = webhookData.data.product.quantity;
+    await productService.updateQuantityProduct(productId, quantity);
+  } else {
+    console.error('No se encontró información de producto en el webhook');
   }
+};
+
+const success = async (webhookData) => {
+  const url = 'https://indumentarianam.netlify.app/';
+  const data = {
+    id: webhookData.id,
+    type: webhookData.type,
+    entity: webhookData.entity,
+    action: webhookData.action,
+    date: webhookData.date,
+    model_version: webhookData.model_version,
+    version: webhookData.version,
+    data: {
+      id: webhookData.data.id,
+      status: webhookData.data.status,
+      amount: webhookData.data.amount,
+      payment_method_id: webhookData.data.payment_method_id,
+      payer: {
+        id: webhookData.data.payer.id,
+        name: webhookData.data.payer.name,
+        email: webhookData.data.payer.email
+      },
+      product: {
+        id: webhookData.data.product.id,
+        name: webhookData.data.product.name,
+        quantity: webhookData.data.product.quantity
+      }
+    }
+  };
 
   try {
-    // Consultar pago con reintentos
-    const payment = await fetchPaymentWithRetry(paymentId);
-    
-    const payerEmail = payment.payer?.email;
-    if (!payerEmail) {
-      console.log("---------------------------------");
-      console.error(`❌ No se encontró el email del pagador para el pago ${paymentId}.`);
-      console.log("---------------------------------");
-      return;
-    }
-
-    console.log("---------------------------------");
-    console.log(`✉️ Email del pagador encontrado: ${payerEmail}`);
-    console.log("---------------------------------");
-
-    if (payment.status === 'approved') {
-      // Resto de tu lógica...
-    }
-
+    const response = await axios.post(url, data);
+    console.log('Pago exitoso. Respuesta:', response.data);
   } catch (error) {
-    console.log("---------------------------------");
-    console.error(`❌ Error al procesar el webhook para el pago ${paymentId}:`, error.message);
-    if (error.response) {
-      console.error('Detalles del error:', {
-        status: error.response.status,
-        data: error.response.data
-      });
-    }
-    console.log("---------------------------------");
+    console.error('Error al enviar pago exitoso:', error);
   }
 };
 
 module.exports = {
+  createPreference,
   processWebhookData,
+  success
 };

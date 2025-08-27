@@ -6,7 +6,6 @@ const productController = {
   async createProduct(req, res) {
     try {
       const product = await productService.createProduct(req.body);
-      console.log("Producto creado:>>>>>>>>>>>>>>>  ", product);
       res.status(201).json(product);
     } catch (error) {
       console.error("Error al crear producto:", error);

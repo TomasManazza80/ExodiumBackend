@@ -2,10 +2,10 @@ const { model } = require("../models/index");
 
 const productService = {
  
-  async createProduct(producto) {
-
+   async createProduct(producto) {
+    console.log("lo que recibe el body######: ", producto);
     try {
-      const { nombre, precio, marca, categoria, cantidad, talle, imagenes, categoryCategoryId } = producto;
+      const { nombre, precio, marca, categoria, cantidad, talle, imagenes, categoryCategoryId, descripcion } = producto;
       const product = await model.product.create({
         nombre,
         precio,
@@ -14,7 +14,8 @@ const productService = {
         cantidad,
         talle,  
         imagenes,
-        categoryCategoryId
+        categoryCategoryId,
+        descripcion 
       });
       return product;
     } catch (error) {
@@ -46,7 +47,7 @@ const productService = {
     }
   },
 
-  async updateProduct(id, nombre, precio, marca, categoria, cantidad, talle, imagenes) {
+  async updateProduct(id, nombre, precio, marca, categoria, cantidad, talle, imagenes, descripcion) {
     try {
       const product = await model.product.findByPk(id);
       if (!product) {
@@ -60,6 +61,7 @@ const productService = {
         cantidad,
         talle,
         imagenes,
+        descripcion
       });
       return product;
     } catch (error) {

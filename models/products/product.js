@@ -33,13 +33,13 @@ const product = Sequelize.define(
       type: DataTypes.STRING,
       allowNull: false,
     },
+    descripcion: {
+      type: DataTypes.STRING,
+      allowNull: true,
+    },
     imagenes: {
       type: DataTypes.ARRAY(DataTypes.STRING),
       allowNull: true,
-    },
-    categoryCategoryId: {
-      type: DataTypes.INTEGER, // <--- Cambiar a INTEGER
-      allowNull: false,
     },
   },
   {

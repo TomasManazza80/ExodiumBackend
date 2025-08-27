@@ -39,7 +39,6 @@ async deleteBoughtProduct(req, res) {
     res.status(204).json({ message: 'Producto eliminado con éxito' });
   } catch (error) {
     console.error('Error al eliminar producto:', error);
-    res.status(500).json({ message: '::::::::::::::Error al eliminar producto' });
   }
 }
 };

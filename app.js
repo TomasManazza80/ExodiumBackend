@@ -10,16 +10,19 @@ var cors = require("cors");
 var indexRouter = require("./routes/index");
 var usersRouter = require("./routes/users");
 var productRouter = require("./routes/product");
-var paymentRouter = require("./routes/paymentRoutes");
+var paymentRouter = require("./routes/paymentRoutes");  // Agregar esta línea
 var vexor = require("vexor");
 const productBought = require("./routes/productBoughtRoute");
-const activityPricesRoutes = require('./routes/activityPrices');
+var recaudationRouter = require("./routes/recaudationRoutes");
 const { Vexor } = vexor;
-const API_URL = process.env.VITE_API_URL;  
 
-var app = express();  
+
+
+
+
+
+var app = express();
 const PORT = 3000;
-
 const vexorInstance = new Vexor({
   publishableKey: process.env.VEXOR_PUBLISHABLE_KEY,
   projectId: process.env.VEXOR_PROJECT_ID,
@@ -27,27 +30,26 @@ const vexorInstance = new Vexor({
 });
 
 
-
-// View engine setup
 app.set('view engine', 'pug');
 app.set('views', path.join(__dirname, 'views'));
 
-// Middlewares - Order is important!
-app.use(cors());
+
+
+
+
 app.use(logger("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, "public")));
+app.use(cors());
 
-// Routes
-app.use('/api/activity-prices', activityPricesRoutes);
-app.use(`${API_URL}/`, indexRouter);
-app.use('/', usersRouter);
-app.use(`${API_URL}/product`, productRouter);
-app.use('/payment', paymentRouter);
-app.use('/products', productRouter);
-app.use(`${API_URL}/boughtProduct`, productBought);
+app.use(`/`, indexRouter);
+app.use(`/`, usersRouter);
+app.use(`/`, productRouter);
+app.use(`/payment`, paymentRouter);
+app.use(`/boughtProduct`, productBought);
+app.use(`/recaudation`, recaudationRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
@@ -56,9 +58,12 @@ app.use(function (req, res, next) {
 
 // error handler
 app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get("env") === "development" ? err : {};
 
+
+  // render the error page
   res.status(err.status || 500);
   res.render("error");
 });
